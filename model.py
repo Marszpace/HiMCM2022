@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+import numdifftools as nd
 
 def static(Xn,k,rmax):
     return rmax*(k-Xn)/k*Xn+Xn
@@ -30,12 +31,15 @@ class model:
 
     def predict(self,time):
         #some dp
+        #if(time==0):
+        #    return self.X[0]
+        #if(time!=len(self.X)):
+        #    XPrev = self.predict(time-1,self.static[0],self.static[1])
+        #else:
+        #    XPrev = self.X[time-1]
         if(time==0):
-            return self.X[0]
-        if(time!=len(self.X)):
-            XPrev = self.predict(time-1,self.static[0],self.static[1])
-        else:
-            XPrev = self.X[time-1]
+            return self.actual[0]
+        XPrev=self.actual[time-1]
         #prediction
         XStatic = static(XPrev,self.static[0],self.static[1])
         XSeasonal = seasonal(XPrev,time,self.data,self.coefficient)
@@ -44,20 +48,28 @@ class model:
         #return
         return XStatic+XSeasonal
 
-    def train(self,period,time):
-        #Only this part is left
+    def cost(self,coefficient,time):
+        return (self.actual[time]-self.predict(time))**2
+    
+
+    def train(self,period,startTime):
+        for i in range(period):
+            grad=nd.Gradient(seasonal)(self.coefficient,startTime+i)
+        n=0
+        for i in grad:
+            self.coefficient[n]=self.coefficient[n]-i
+            n+=1
         pass
 
-    def __init__(self,x0):
+    def __init__(self):
         #modify initial parameters here
-        self.X=[x0]
         self.static=[1500,0.15] #k,rmax
         self.data=[]
         self.coefficient=[]
         self.actual=[]
 
 
-arstneio = model(0.03)
+arstneio = model()
 arst=[]
 
 for i in range(100):
